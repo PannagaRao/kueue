@@ -806,3 +806,24 @@ func Test_countDevicesPerClass_overflow(t *testing.T) {
 		})
 	}
 }
+
+func TestCELCacheCompilesFeatureGatedExpressions(t *testing.T) {
+	tests := []struct {
+		name string
+		expr string
+	}{
+		{"basic driver check", `device.driver == 'gpu.example.com'`},
+		{"capacity field access", `'gpu.example.com/memory' in device.capacity`},
+		{"allowMultipleAllocations", `device.allowMultipleAllocations == true`},
+		{"includes function", `device.attributes['gpu.example.com'].tags.includes('compute')`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := celCache.GetOrCompile(tt.expr)
+			if result.Error != nil {
+				t.Errorf("celCache.GetOrCompile(%q) failed: %v", tt.expr, result.Error)
+			}
+		})
+	}
+}
